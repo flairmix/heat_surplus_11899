@@ -1,5 +1,7 @@
+
 # ignore all txt
 *.txt
+*.xlsx
 
 Panels_level*
 
