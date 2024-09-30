@@ -1,6 +1,7 @@
 from os import mkdir, path
 import pandas as pd
-
+from matplotlib import pyplot as plt 
+from matplotlib import figure, use
 
 class Sun_calculation():
 
@@ -35,6 +36,7 @@ class Sun_calculation():
         self.max_hour = self.find_max_hour().replace('_W', "")
 
 
+
     def clearDeleteLater(self):
         self.df_walls.dropna(inplace=True)
         self.df_walls['zone'] = self.df_walls['zone'].str.replace(" Фонарь", "")
@@ -61,9 +63,8 @@ class Sun_calculation():
         df_calculated = self.df_merged.copy()
         for column_name in Sun_calculation.columns_hours:  
             df_calculated[f'{column_name}_W'] = round(df_calculated["area_wall_sum_m2"] * df_calculated[column_name])
-        df_calculated.loc['Total'] = df_calculated.sum(numeric_only=True)
 
-        #create new column with max for every space 
+        df_calculated.loc['Total'] = df_calculated.sum(numeric_only=True)
 
         return df_calculated
     
@@ -134,9 +135,58 @@ class Sun_calculation():
 
         temp_df_0.to_csv(f"{folder}/{folder}.csv")
         
+
+    def prepare_df_to_plot(self, df: pd.DataFrame):
+        new_col = []
+        for index, row in df.iterrows():
+            
+            if type(row['zone']) != str:
+                new_col.append('Total')
+            else:
+                new_col.append(str(row['zone'])+"_"+str(row['spaceName'])+"_"+str(row['name'])+"_"+str(row['orient']))
+
+        new_df = df.drop([i for i in df.columns if "W" not in i], axis=1)
+
+        new_df['name'] = new_col
+        new_df = new_df.set_index('name', drop=True)
+        return new_df.T
         
 
                 
+    def plot_df(self, y_limit:int, y_step:int):
 
+        folder = f"{self.path_to_WallsFile}".replace(".txt", "")
+
+        for zone_name in self.zones:
+
+            df = self.df_calculated.loc[self.df_calculated['zone'] == zone_name]
+            df = self.prepare_df_to_plot(df)
+
+            if not path.isdir(f"zones --- {folder}"):
+                mkdir(f"zones --- {folder}", mode=0o777)
+
+            name_output = (f"zones --- {folder}/{folder}_zone_{zone_name}.png")
+
+
+            plt.ioff()
+            
+            # Create a new figure, plot into it, then close it so it never gets displayed
+            fig = plt.figure()
+
+            plt.figure(figsize=(24, 12), dpi=80)
+
+            plt.xticks([i for i in range(24)])
+            plt.yticks([i for i in range(0, y_limit, y_step)])
+
+            for column in df.columns:
+                plt.plot(df.index, df[column], "-", label=f'Теплопоступления {column}, Вт')
+
+            plt.title(f"Теплопоступления в зоне по часам - {name_output}")
+            plt.xlabel('Часы суток')
+            plt.ylabel('Теплопоступления, Вт')
+            plt.grid(True)
+            plt.legend()
+            plt.savefig(name_output)
+            plt.close(fig)
 
 
