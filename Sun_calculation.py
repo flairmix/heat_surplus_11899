@@ -88,6 +88,9 @@ class Sun_calculation():
 
             new_df = new_df.loc[new_df['zone'] == zone_name]
             new_df.index.name = 'id'
+
+            new_df.loc['Total'] = new_df.sum(numeric_only=True)
+
             
             folder = f"{self.path_to_WallsFile}".replace(".txt", "")
 
@@ -160,6 +163,9 @@ class Sun_calculation():
         for zone_name in self.zones:
 
             df = self.df_calculated.loc[self.df_calculated['zone'] == zone_name]
+
+            df.loc['Total'] = df.sum(numeric_only=True)
+           
             df = self.prepare_df_to_plot(df)
 
             if not path.isdir(f"zones --- {folder}"):
